@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bookshop Admin</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      form {
+        max-width: 400px;
+        margin: 0 auto;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+      }
+      input {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 16px;
+        box-sizing: border-box;
+      }
+      button {
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+
+      /* Style for the form */
+      form {
+        margin-bottom: 20px;
+      }
+
+      /* Style for the book table */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      th,
+      td {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+      }
+
+      th {
+        background-color: #f2f2f2;
+      }
+      .navbar {
+        background-color: #333;
+        overflow: hidden;
+        padding: 10px;
+        color: white;
+        text-align: right;
+      }
+
+      /* Style for the logout button */
+      #logoutButton {
+        background-color: #f44336;
+        color: white;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      #logoutButton:hover {
+        background-color: #d32f2f;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar">
+      <span id="loggedInUser"></span>
+      <button id="logoutButton" onclick="logout()">Logout</button>
+    </div>
+    <h2>Add Book to Bookshop</h2>
+
+    <form id="bookForm">
+      <label for="imageURL">Image URL:</label>
+      <input type="text" id="imageURL" name="imageURL" required />
+
+      <label for="bookName">Book Name:</label>
+      <input type="text" id="bookName" name="bookName" required />
+
+      <label for="price">Price:</label>
+      <input type="number" id="price" name="price" step="0.01" required />
+
+      <label for="quantity">Quantity:</label>
+      <input type="number" id="quantity" name="quantity" required />
+
+      <button
+        type="button"
+        id="addOrUpdateButton"
+        onclick="addOrUpdateButton()"
+      >
+        Add Book
+      </button>
+    </form>
+
+    <h2>Book List</h2>
+    <div id="bookTableContainer"></div>
+    <script>
+      function logout() {
+        localStorage.removeItem("sellertoken");
+        localStorage.removeItem("sellername");
+        window.location.href = "sellerlogin.html";
+      }
+      var sellerName;
+      const authToken = localStorage.getItem("sellertoken");
+
+      const decodedToken = parseJwt(authToken);
+      const loggedInId = decodedToken ? decodedToken.logID : null;
+      console.log("Logged-in User ID:", loggedInId);
+
+      async function getLoggedInUserName(id) {
+        const response = await fetch(`/odata/v4/Seller/sellers`);
+        const sellers = await response.json();
+        sellers.value.forEach((seller) => {
+          if (seller.id == id) {
+            const username = seller.username;
+            console.log(`Username for ID ${id}: ${username}`);
+            localStorage.setItem("sellername", username);
+            return username;
+          } else {
+            console.log(`No username found for ID ${id}`);
+          }
+        });
+      }
+      getLoggedInUserName(loggedInId);
+      const loggedInUser = document.getElementById("loggedInUser");
+      loggedInUser.innerHTML = `Logged in as ${localStorage.getItem(
+        "sellername"
+      )}`;
+
+      function generateUUID() {
+        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
+          /[xy]/g,
+          function (c) {
+            const r = (Math.random() * 16) | 0,
+              v = c === "x" ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+          }
+        );
+      }
+
+      function parseJwt(token) {
+        try {
+          const decoded = JSON.parse(atob(token.split(".")[1]));
+          return decoded;
+        } catch (error) {
+          console.error("Error parsing JWT token:", error);
+          return null;
+        }
+      }
+
+      async function addOrUpdateBook() {
+        try {
+          var imageURL = document.getElementById("imageURL").value;
+          var bookName = document.getElementById("bookName").value;
+          var price = document.getElementById("price").value;
+          var quantity = document.getElementById("quantity").value;
+          var seller_id = loggedInId;
+
+          const existingBooks = await fetchBooks();
+          const existingBook = existingBooks.find(
+            (book) => book.bookname === bookName
+          );
+          const Book_id = generateUUID();
+          const response = await fetch(`/odata/v4/book/postbooks`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              id: Book_id,
+              imageurl: imageURL,
+              bookname: bookName,
+              price: parseInt(price),
+              quantity: parseInt(quantity),
+              seller_id: seller_id,
+            }),
+          });
+
+          console.log("New book added:", response);
+          // }
+        } catch (error) {
+          console.error("Error adding/updating book", error);
+        }
+      }
+
+      //------------------------------------------GET SELLER DATA ------------------------------------------
+      async function fetchBooks() {
+        try {
+          const response = await fetch("/odata/v4/book/getbooks");
+          const data = await response.json();
+          console.log(data);
+          return data.value;
+        } catch (error) {
+          console.error("Error fetching books", error);
+          throw error;
+        }
+      }
+
+      async function getsellername(id) {
+        const response = await fetch(`/odata/v4/Seller/sellers`);
+        const sellers = await response.json();
+        const seller = sellers.value.find((seller) => seller.id == id);
+
+        return seller ? seller.username : "Unknown Seller";
+      }
+
+      async function displayBooks() {
+        if (localStorage.getItem("sellername") === null) {
+          window.location.href = "sellerlogin.html";
+        } else {
+          const tableContainer = document.getElementById("bookTableContainer");
+
+          const table = document.createElement("table");
+
+          // Create table header
+          const headerRow = table.createTHead().insertRow();
+          headerRow.innerHTML =
+            "<th>Image</th><th>Book Name</th><th>Sold By</th><th>Price</th><th>Quantity</th>";
+          const tbody = table.createTBody();
+          const books = await fetchBooks();
+
+          await Promise.all(
+            books.map(async (book) => {
+              const sellerName = await getsellername(book.seller_id);
+              const row = tbody.insertRow();
+              row.innerHTML = `<td><img src="${book.imageurl}" alt="Book Image" style="max-width: 100px; max-height: 100px;"></td>
+                          <td>${book.bookname}</td>
+                          <td>${sellerName}</td>
+                          <td>${book.price}</td>
+                          <td>${book.quantity}</td>`;
+            })
+          );
+          tableContainer.appendChild(table);
+        }
+      }
+      window.onload = function () {
+        displayBooks();
+      };
+
+      // Example: Call addOrUpdateBook function when a button is clicked
+      document
+        .getElementById("addOrUpdateButton")
+        .addEventListener("click", addOrUpdateBook);
+    </script>
+  </body>
+</html>

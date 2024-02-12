@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buyer Page</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- <link rel="stylesheet" href="styles.css"> -->
+ 
+       <style>
+       
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+      }
+ 
+      .navbar {
+        background-color: #333;
+        padding: 15px;
+        color: #fff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+ 
+      .container {
+        margin: 20px auto;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      }
+ 
+      h1,
+      h2 {
+        color: #4528b7;
+        text-align: center;
+        font-size: xxx-large;
+        font-family: cursive;
+        border-bottom: 7px solid red;
+      }
+ 
+      .content {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        gap: 20px;
+        margin-top: 20px;
+      }
+ 
+      .book {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        width: 200px;
+      }
+ 
+      .book img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 4px;
+        margin-bottom: 10px;
+      }
+ 
+      .cart {
+        margin-top: 20px;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        display: none;
+      }
+ 
+      .cart-item {
+        margin-bottom: 10px;
+      }
+ 
+      .navbar button {
+        font-size: 24px; /* Adjust the font size as needed */
+        display: flex;
+        align-items: center;
+      }
+ 
+      .fa-shopping-cart {
+        font-size: 1.5em; /* Adjust the font size of the cart icon */
+      }
+      button {
+        background-color: #4caf50;
+        color: #fff;
+        padding: 27px 43px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+ 
+      button:hover {
+        background-color: #45a049;
+      }
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+      }
+ 
+      .modal-content {
+        position: absolute;
+        width: 85%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+      }
+ 
+      .close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 70px;
+        cursor: pointer;
+      }
+      .cart-item-modal {
+        display: table;
+        width: 100%;
+        border-spacing: 10px;
+        margin-bottom: 10px;
+      }
+ 
+      .cart-item-modal img {
+        display: table-cell;
+        width: 250px;
+        /* Adjust the width as needed */
+        height: auto;
+        margin-right: 10px;
+      }
+ 
+      .cart-item-modal p {
+        display: table-cell;
+        vertical-align: middle;
+        font-size: 35px;
+        color: rebeccapurple;
+        font-style: italic;
+        font-weight: 500;
+      }
+ 
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1 id="availableBooksTitle">Available Books</h1>
+        <button id="cartButton" onclick="openCart()">
+            <i class="fas fa-shopping-cart"></i> Cart
+        </button>
+        <div class="navbar">
+          <span id="loggedInUser"></span>
+          <button id="logoutButton" onclick="logout()">Logout</button>
+      </div>
+    </div>
+ 
+    <div class="container" id="content"></div>
+ 
+    <div class="modal" id="cartModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCart()">&times;</span>
+            <h2>Shopping Cart</h2>
+            <div id="cartItemsModal"></div>
+            <button onclick="proceedToCheckout()">Proceed</button>
+        </div>
+    </div>
+ 
+    <script src="script.js"></script>
+</body>
+</html>
+ 
+   
+    <script>
+        function logout() {
+        localStorage.removeItem('buyertoken');
+        localStorage.removeItem('buyername');
+        window.location.href = 'buyerlogin.html';
+      }
+      var buyerName;
+const authToken = localStorage.getItem('buyertoken');
+ 
+const decodedToken = parseJwt(authToken);
+const loggedInId = decodedToken ? decodedToken.logID : null;
+console.log('Logged-in User ID:', loggedInId);
+localStorage.setItem('loggedInId', loggedInId);
+ 
+async function getLoggedInUserName(id) {
+  const response = await fetch(`/odata/v4/Buyer/buyers`);
+  const buyers = await response.json();
+  console.log(buyers);
+  buyers.value.forEach((buyer) => {
+    if (buyer.id == id) {
+      const username = buyer.username;
+      console.log(`Username for ID ${id}: ${username}`);
+      localStorage.setItem('buyername', username);
+      return username;
+    }
+    else{
+      console.log(`No username found for ID ${id}`);
+    }
+  });
+}
+getLoggedInUserName(loggedInId);
+ const loggedInUser=document.getElementById("loggedInUser");
+  loggedInUser.innerHTML= `Logged in as ${localStorage.getItem('buyername')}`;
+   function parseJwt(token) {
+  try {
+    const decoded = JSON.parse(atob(token.split('.')[1]));
+    return decoded;
+  } catch (error) {
+    console.error('Error parsing JWT token:', error);
+    return null;
+  }
+}
+function generateUUID() {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+        var r = (Math.random() * 16) | 0,
+            v = c === "x" ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+}
+ 
+let booksData; // Global variable to store books data
+let globalCartItems ;
+ 
+function updateNavbar(availableBooksCount) {
+    const availableBooksTitle = document.getElementById("availableBooksTitle");
+    if (!isNaN(availableBooksCount)) {
+        availableBooksTitle.textContent = `Available Books (${availableBooksCount})`;
+    } else {
+        availableBooksTitle.textContent = "Available Books";
+    }
+}
+ 
+async function fetchData(url) {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Error fetching data: ${response.status}`);
+    }
+    return response.json();
+}
+ 
+const contentContainer = document.getElementById("content");
+const cartContainer = document.getElementById("cart");
+const cartItemsContainer = document.getElementById("cartItems");
+const cartButton = document.getElementById("cartButton");
+ 
+async function refreshBookData() {
+    try {
+      const newData = await fetchData("/odata/v4/book/getbooks");
+      // Update the booksData variable and refresh the UI
+      booksData = newData;
+      updateNavbar(booksData.value ? booksData.value.length : 0);
+      updateBookDisplay();
+    } catch (error) {
+      console.error('Error refreshing book data:', error);
+    }
+  }
+ 
+  // Function to update the book display based on the current data
+  function updateBookDisplay() {
+    // Clear existing content
+    contentContainer.innerHTML = "";
+ 
+    // Render books
+    booksData.value.forEach((book) => {
+      const bookElement = document.createElement("div");
+      bookElement.classList.add("book");
+      bookElement.innerHTML = `
+        <img src="${book.imageurl}" alt="${book.bookname}" />
+        <div class="book-info">
+          <h3>${book.bookname}</h3>
+          <p>$${book.price}</p>
+          <p>Available Quantity: ${book.quantity}</p>
+          <p>Sold by: ${book.seller_id}</p>
+          <input type="number" id="quantity_${book.id}" min="1" max="${book.quantity}" placeholder="Quantity">
+          <button onclick="addToCart('${book.id}')">Add to Cart</button>
+        </div>
+      `;
+      contentContainer.appendChild(bookElement);
+    });
+  }
+ 
+  // Initial data fetch and UI update
+  refreshBookData();
+ 
+  // Set up the periodic data refresh (every 5 minutes)
+  const refreshInterval = 50*1000; // 5 minutes in milliseconds
+  setInterval(refreshBookData, refreshInterval);
+ 
+// Cart logic
+const cart = [];
+ 
+ 
+async function addToCart(bookId) {
+    const quantityInput = document.getElementById(`quantity_${bookId}`);
+    const quantity = parseInt(quantityInput.value);
+    if (quantity <= 0 || isNaN(quantity)) {
+        alert("Please enter a valid quantity.");
+        return;
+    }
+    else if(quantity > booksData.value.find((book) => book.id === bookId).quantity){
+        alert("The entered quantity exceeds the available quantity.");
+        return;
+    }
+ 
+    try {
+        const idcart = generateUUID();
+        const selectedBook = booksData.value.find((book) => book.id === bookId);
+        let book_id = bookId;
+        if (selectedBook) {
+            // Save cart item to local storage
+            const cartItem = {
+                id: idcart,
+                imageurl: selectedBook.imageurl,
+                bookname: selectedBook.bookname,
+                price: selectedBook.price,
+                quantity: quantity,
+                book_id: book_id,
+                buyer_id: localStorage.getItem('loggedInId')
+                };
+            const cartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+            cartItems.push(cartItem);
+            localStorage.setItem('cartItems', JSON.stringify(cartItems));
+ 
+            // Update UI or show message to the user
+            console.log('Item added to cart:', cartItem);
+ 
+            // Make a request to store cart item in the database
+            const response = await fetch('/odata/v4/addtocart/addtocart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(cartItem)
+            });
+            if (response.ok) {
+                console.log('Item added to cart in the database:', cartItem);
+            } else {
+                throw new Error('Failed to add item to cart in the database');
+            }
+        } else {
+            alert("The selected book is not available.");
+        }
+    } catch (error) {
+        console.error('Error adding item to cart:', error);
+        // Handle error, show an error message to the user, etc.
+    }
+}
+ 
+ 
+function openCart() {
+    // Show the modal
+    document.getElementById("cartModal").style.display = "block";
+ 
+    // Update the cart items in the modal
+    updateCartModal();
+}
+ 
+function closeCart() {
+    // Close the modal
+    document.getElementById("cartModal").style.display = "none";
+}
+ 
+async function updateCartModal() {
+    try {
+        const response = await fetch('/odata/v4/addtocart/addtocart');
+        const cartItems = await response.json();
+        globalCartItems=cartItems;
+        if (response.ok) {
+            console.log('cartitems',cartItems)
+            const cartItemsModalContainer = document.getElementById("cartItemsModal");
+            cartItemsModalContainer.innerHTML = "";
+ 
+            // Create a table to display cart items
+            const table = document.createElement("table");
+ 
+            cartItems.value.forEach((item) => {
+                // Create a table row for each item
+                const row = document.createElement("tr");
+                row.classList.add("cart-item-modal");
+ 
+                // Add table cells for image, name, and price
+                const imageCell = document.createElement("td");
+                const namePriceCell = document.createElement("td");
+                const quantityCell = document.createElement("td");
+ 
+                const imgElement = document.createElement("img");
+                imgElement.src = item.imageurl;
+                imgElement.alt = item.bookname;
+                imgElement.width = 80; // Adjust the width as needed
+ 
+                const namePriceElement = document.createElement("p");
+                namePriceElement.innerHTML = `
+                    <strong>${item.bookname}</strong><br>
+                    Price: $${item.price}
+                `;
+ 
+                const quantityElement = document.createElement("p");
+                quantityElement.textContent = `Quantity: ${item.quantity}`;
+ 
+                imageCell.appendChild(imgElement);
+                namePriceCell.appendChild(namePriceElement);
+                quantityCell.appendChild(quantityElement);
+ 
+                row.appendChild(imageCell);
+                row.appendChild(namePriceCell);
+                row.appendChild(quantityCell);
+ 
+                // Add the row to the table
+                table.appendChild(row);
+            });
+ 
+            // Add the table to the modal container
+            cartItemsModalContainer.appendChild(table);
+        } else {
+            throw new Error('Failed to fetch cart items');
+        }
+    } catch (error) {
+        console.error('Error updating cart modal:', error);
+        // Handle error, show an error message to the user, etc.
+    }
+    console.log(globalCartItems.value,'bbbbbbbbbbbbbbbbbbbbbb')
+}
+ 
+async function proceedToCheckout() {
+    try {
+        const cartItems = globalCartItems.value;
+        for (const item of cartItems) {
+            const response = await fetch(`/odata/v4/addtocart/proceed`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: item.book_id, quantity: item.quantity })
+            });
+            deletecartitem(item.id);
+            openCart();
+         
+  //           if (!response.ok) {
+  //               localStorage.removeItem('cartItems')
+  // console.log('cart Items cleared ')
+  //               throw new Error('Failed to update inventory quantities');
+             
+  //           }
+       
+          }
+    } catch (error) {
+        console.error('Error during checkout:', error);
+        // Handle error
+    }
+}
+let logg=localStorage.getItem('loggedInId');
+async function deletecartitem(logg){
+  console.log(logg,'idofloggedinuser');
+  try{
+    const response = await fetch(
+      `/odata/v4/addtocart/deletecart(${encodeURIComponent(logg)})`,
+      {
+        method: "DELETE",
+      }
+    );
+    const result = await response.json();
+    alert("Item deleted successfully");
+    console.log("Data deleted successfully:", result);
+  }catch(error){
+console.log(error)
+  }}
+ </script>
+  </body>
+</html>
+has context menu
